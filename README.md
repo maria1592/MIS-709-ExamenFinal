@@ -26,4 +26,4 @@ Funcionalidades principales:
 ## 2. Arquitectura general
 
 ### **Diagrama de servicios (ASCII)**
-
+![Arquitectura general](images/arquitectura.png)
