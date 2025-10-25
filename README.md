@@ -254,6 +254,8 @@ docker secret ls
 # inspeccionar config creada
 docker config ls
 ```
+Resultado de *docker stack services todo-stack*
+![swarm2](images/swarm2.png)
 
 ### **3.3 Despliegue en Kubernetes**
 
