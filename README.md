@@ -38,6 +38,19 @@ Funcionalidades principales:
 ## 3. Instrucciones paso a paso
 
 ### **3.1 Despliegue local con Docker Compose**
+Descargar imagenes desde DockerHub
+```bash
+docker-compose build
+docker pull mgonzalesl/maria-backend:1.0
+docker pull mgonzalesl/maria-frontend:1.0
+docker pull mgonzalesl/maria-redis:1.0
+docker pull mgonzalesl/maria-worker:1.0
+docker pull mgonzalesl/todo-nginx:1.0
+
+docker images
+```
+
+![ListadoImagenes](images/lista-imagenes.png)
 
 1. Construir los servicios:
 ```bash
@@ -54,14 +67,20 @@ docker-compose up -d
 docker ps
 ```
 
+![ListadoDeServicios](images/docker-init.png)
+
 4. Acceder al frontend en el navegador:
 
 http://localhost:3000 (puerto configurado en .env)
+
+![frontend](images/frontend.png)
 
 5. Probar API:
 ```bash
 curl http://localhost:3000/api/items/
 ```
+
+![brackend](images/backend.png)
 
 ### **3.2 Despliegue en Docker Swarm**
 1. Inicializar Swarm:
@@ -98,7 +117,7 @@ docker service ls
 docker service logs todo-stack_backend
 ```
 
-### **3.3 Despliegue en Kubernetes
+### **3.3 Despliegue en Kubernetes**
 
 1. Aplicar manifiestos:
 ```bash
@@ -117,8 +136,8 @@ Usar la IP de servicio de tipo LoadBalancer o kubectl port-forward:
 ```bash
 kubectl port-forward svc/frontend 8080:80
 ```
-### **4. Capturas de pantalla y salidas de verificación
-1. Ejemplo Docker Compose
+### **4. Capturas de pantalla y salidas de verificación**
+Ejemplo Docker Compose
 ```bash
 $ docker ps
 CONTAINER ID   IMAGE                     STATUS         PORTS
@@ -128,7 +147,7 @@ ijkl9012       todo-nginx:1.0           Up 2m          0.0.0.0:8080->80/tcp
 mnop3456       redis:alpine             Up 2m          0.0.0.0:6379->6379/tcp
 ```
 
-3. Ejemplo Docker Swarm
+Ejemplo Docker Swarm
 ```bash
 $ docker stack services todo-stack
 ID            NAME                 MODE        REPLICAS  IMAGE
@@ -138,7 +157,7 @@ ijkl56        todo-stack_nginx     replicated  2/2       todo-nginx:1.0
 mnop78        todo-stack_redis     replicated  1/1       redis:alpine
 ```
 
-5. Ejemplo API
+Ejemplo API
 ```bash
 curl http://localhost:3000/api/items/
 # [
