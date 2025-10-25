@@ -50,7 +50,7 @@ docker pull mgonzalesl/todo-nginx:1.0
 docker images
 ```
 
-![Listado de imagenes](images/lista-imagenes.png)
+![Listado de imagenes]([images/lista-imagenes.png](https://drive.google.com/file/d/15AUalPgMhwibmvzu7tKydmicEuCCWoXY/view?usp=drive_link))
 
 1. Construir los servicios:
 ```bash
