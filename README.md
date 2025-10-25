@@ -49,7 +49,7 @@ docker pull mgonzalesl/todo-nginx:1.0
 
 docker images
 ```
-![Listado de iamgenes](images/lista-imagenes.png)
+![Listado de imagenes](images/lista-imagenes.png)
 
 1. Construir los servicios:
 ```bash
