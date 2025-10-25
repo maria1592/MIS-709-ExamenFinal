@@ -51,7 +51,7 @@ docker images
 ```
 
 ![Arquitectura general](images/arquitectura.png)
-![Listado de imagenes](images/lista-imagenes.png)
+![Listado de imagenes](images/backend.png)
 
 1. Construir los servicios:
 ```bash
