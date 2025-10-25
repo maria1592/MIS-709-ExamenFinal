@@ -73,10 +73,14 @@ docker ps
 
 http://localhost:3000 (puerto configurado en .env)
 
+![frontend](images/frontend.png)
+
 5. Probar API:
 ```bash
 curl http://localhost:3000/api/items/
 ```
+
+![brackend](images/backend.png)
 
 ### **3.2 Despliegue en Docker Swarm**
 1. Inicializar Swarm:
