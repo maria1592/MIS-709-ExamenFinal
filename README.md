@@ -76,45 +76,183 @@ http://localhost:3000 (puerto configurado en .env)
 ![frontend](images/frontend.png)
 
 5. Probar API:
-```bash
-curl http://localhost:3000/api/items/
-```
+   
+curl http://localhost:3000/api/docs
 
 ![brackend](images/backend.png)
 
 ### **3.2 Despliegue en Docker Swarm**
-1. Inicializar Swarm:
+Archivo stack-deploy.yml para Swarm
+
+```bash
+# stack-deploy.yml
+version: "3.9"
+
+services:
+  redis:
+    image: mgonzalesl/maria-redis:1.0
+    # no publish de puerto es recomendado en swarm para servicios internos
+    ports:
+      - "6379:6379"   # opcional: publica Redis al host (si lo necesitas)
+    networks:
+      - todonet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    secrets:
+      - redis_password
+
+  backend:
+    image: mgonzalesl/maria-backend:1.0
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/db
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis:6379
+      - REDIS_PASSWORD_FILE=/run/secrets/redis_password
+    networks:
+      - todonet
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    command: ["/bin/sh", "-c", "while ! nc -z redis 6379; do sleep 1; done && uvicorn main:app --host 0.0.0.0 --port 8000"]
+    secrets:
+      - redis_password
+      - db_password
+
+  frontend:
+    image: mgonzalesl/maria-frontend:1.0
+    ports:
+      - "80:80"
+    networks:
+      - todonet
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: frontend_config
+        target: /app/config.js
+
+  worker:
+    image: mgonzalesl/maria-worker:1.0
+    networks:
+      - todonet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - backend
+      - redis
+    secrets:
+      - redis_password
+
+  nginx:
+    image: mgonzalesl/todo-nginx:1.0
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - todonet
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  db_data:
+
+networks:
+  todonet:
+
+secrets:
+  redis_password:
+    file: ./secrets/redis_password.txt
+  db_password:
+    file: ./secrets/db_password.txt
+
+configs:
+  frontend_config:
+    file: ./frontend/config.js
+```
+
+El archivo incluye:
+- Uso de imágenes con tags :1.0 (versionamiento).
+- Réplicas en deploy.replicas para escalabilidad.
+- secrets y configs apuntan a archivos locales que deben existir antes de docker stack deploy.
+- container_name y build: no están presentes (no son válidos en stack).
+
+1. Crear archivos 
+```bash
+./secrets/redis_password.txt
+./secrets/db_password.txt
+./frontend/config.js
+.env 
+```
+2. Crear los archivos de secrets
+```bash
+mkdir secrets
+
+# Crear secretos
+"myRedisPassword123" | Out-File -Encoding ascii .\secrets\redis_password.txt
+"myDBPassword123"    | Out-File -Encoding ascii .\secrets\db_password.txt
+
+# Crear config.js mínimo para frontend
+'window.__CONFIG__ = { API_URL: "http://maria-backend:8000/api" };' > .\frontend\config.js
+```
+3. Construir y subir las imágenes
+```bash
+# build local (si aún no existen)
+docker build -t mgonzalesl/maria-backend:1.0 ./backend
+docker build -t mgonzalesl/maria-frontend:1.0 ./frontend
+docker build -t mgonzalesl/maria-worker:1.0 ./worker    
+docker build -t mgonzalesl/maria-redis:1.0 ./redis      
+docker build -t mgonzalesl/todo-nginx:1.0 ./nginx
+
+docker push mgonzalesl/maria-backend:1.0
+docker push mgonzalesl/maria-frontend:1.0
+docker push mgonzalesl/maria-worker:1.0
+docker push mgonzalesl/maria-redis:1.0
+docker push mgonzalesl/todo-nginx:1.0
+```
+4. Inicializar Swarm:
 ```bash
 docker swarm init
 ```
-
-2. Construir imágenes y etiquetarlas (si no están):
-```bash
-docker build -t mgonzalesl/maria-backend:1.0 ./backend
-docker build -t mgonzalesl/maria-frontend:1.0 ./frontend
-docker build -t mgonzalesl/todo-nginx:1.0 ./nginx
-```
-
-3. Crear secrets si aplica:
-```bash
-echo "myRedisPassword123" | docker secret create redis_password -
-echo "myDBPassword123" | docker secret create db_password -
-```
-
-4. esplegar el stack:
+5. Desplegar el stack
 ```bash
 docker stack deploy -c stack-deploy.yml todo-stack
 ```
+![swarm](images/swarm.png)
 
-5. Verificar servicios:
+6. Verificar el despliegue
 ```bash
+# ver servicios del stack
 docker stack services todo-stack
-docker service ls
-```
 
-6. Ver logs de un servicio:
-```bash
-docker service logs todo-stack_backend
+# ver tareas / containers
+docker stack ps todo-stack
+
+# ver logs de un servicio
+docker service logs todo-stack_backend --follow
+
+# ver secretos creados en Swarm
+docker secret ls
+
+# inspeccionar config creada
+docker config ls
 ```
 
 ### **3.3 Despliegue en Kubernetes**
