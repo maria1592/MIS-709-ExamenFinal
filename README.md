@@ -66,6 +66,8 @@ docker-compose up -d
 docker ps
 ```
 
+![ListadoDeServicios](images/docker-init.png)
+
 4. Acceder al frontend en el navegador:
 
 http://localhost:3000 (puerto configurado en .env)
