@@ -1,0 +1,76 @@
+services:
+  redis:
+    image: mgonzalesl/maria-redis:1.0
+    container_name: maria-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - todonet
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  backend:
+    image: mgonzalesl/maria-backend:1.0
+    container_name: maria-backend
+    ports:
+      - "${BACKEND_PORT}:8000"
+    volumes:
+      - db_data:/app/db
+      - ./backend:/app
+    env_file:
+      - .env
+    networks:
+      - todonet
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  frontend:
+    image: mgonzalesl/maria-frontend:1.0
+    container_name: maria-frontend
+    ports:
+      - "${FRONTEND_PORT}:80"
+    volumes:
+      - ./frontend:/app
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - todonet
+    restart: unless-stopped
+
+  worker:
+    image: mgonzalesl/maria-worker:1.0
+    container_name: maria-worker
+    networks:
+      - todonet
+    depends_on:
+      - backend
+      - redis
+    restart: unless-stopped
+
+  nginx:
+    image: mgonzalesl/todo-nginx:1.0
+    container_name: todo-nginx
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - todonet
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
+
+networks:
+  todonet:
