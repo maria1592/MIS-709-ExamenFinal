@@ -130,6 +130,7 @@ Para despliegues en Kubernetes se recomienda crear los siguientes archivos (no i
 ## 3. Instrucciones paso a paso
 
 ### **3.1 Despliegue local con Docker Compose**
+![ListadoDockerHub](images/hubDocker.png)
 Descargar imagenes desde DockerHub
 ```bash
 docker-compose build
@@ -353,22 +354,36 @@ Resultado de *docker stack services todo-stack*
 
 1. Aplicar manifiestos:
 ```bash
-kubectl apply -f k8s/
+kubectl apply -f namespace.yaml
+kubectl apply -f secret.yaml
+kubectl apply -f redis-deployment.yaml
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f frontend-deployment.yaml
+kubectl apply -f worker-deployment.yaml
+kubectl apply -f nginx-deployment.yaml
 ```
 
 2. Verificar Pods y Services:
 ```bash
-kubectl get pods
-kubectl get services
+kubectl get pods -n todo-app
+kubectl get svc -n todo-app
+kubectl rollout status deployment/backend -n todo-app
 ```
 
-3. Acceder al frontend:
+4. Acceder al frontend:
 
 Usar la IP de servicio de tipo LoadBalancer o kubectl port-forward:
 ```bash
 kubectl port-forward svc/frontend 8080:80
 ```
-### **4. Capturas de pantalla y salidas de verificación**
+
+4. Versionamiento
+```bash
+docker build -t mgonzalesl/maria-backend:2.0 ./backend
+docker push mgonzalesl/maria-backend:2.0
+```
+
+### **4. Salidas de verificación**
 Ejemplo Docker Compose
 ```bash
 $ docker ps
@@ -387,13 +402,4 @@ abcd12        todo-stack_backend   replicated  2/2       maria-backend:1.0
 efgh34        todo-stack_frontend  replicated  2/2       maria-frontend:1.0
 ijkl56        todo-stack_nginx     replicated  2/2       todo-nginx:1.0
 mnop78        todo-stack_redis     replicated  1/1       redis:alpine
-```
-
-Ejemplo API
-```bash
-curl http://localhost:3000/api/items/
-# [
-#   {"id":1, "title":"Estudiar Docker", "completed":false},
-#   {"id":2, "title":"Preparar examen", "completed":true}
-# ]
 ```
