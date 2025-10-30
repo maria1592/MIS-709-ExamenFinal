@@ -35,6 +35,98 @@ Funcionalidades principales:
 
 ---
 
+### **Estructura del proyecto**
+Este proyecto implementa una aplicación de lista de tareas (To-Do List) con arquitectura cliente-servidor y despliegue mediante contenedores Docker.
+La solución integra varios servicios coordinados con Docker Compose y Docker Swarm para garantizar modularidad, escalabilidad y fácil despliegue.
+```bash
+to-do-list/
+│
+├── Backend/                  # API REST desarrollada con FastAPI
+│   ├── __pycache__/          # Archivos temporales compilados de Python
+│   ├── Dockerfile            # Imagen Docker del backend
+│   ├── crud.py               # Operaciones CRUD sobre la base de datos
+│   ├── database.py           # Configuración de la base de datos (SQLAlchemy)
+│   ├── main.py               # Punto de entrada principal del backend (app FastAPI)
+│   ├── models.py             # Modelos ORM que representan las tablas SQL
+│   ├── requirements.txt      # Dependencias del backend
+│   ├── schemas.py            # Esquemas Pydantic para validación de datos
+│   └── sql_app.db            # Base de datos SQLite (modo local / pruebas)
+│
+├── db/                       # Directorio reservado para base de datos (volúmenes o inicialización)
+│
+├── frontend/                 # Aplicación del lado del cliente (React + Tailwind)
+│   ├── public/               # Archivos estáticos públicos (index.html, íconos, etc.)
+│   ├── src/                  # Código fuente React (componentes, rutas, servicios)
+│   ├── Dockerfile            # Imagen Docker del frontend
+│   ├── nginx.conf            # Configuración Nginx para servir la app en producción
+│   ├── package.json          # Dependencias y scripts de npm/yarn
+│   ├── package-lock.json     # Bloqueo de versiones npm
+│   ├── postcss.config.js     # Configuración de PostCSS
+│   ├── tailwind.config.js    # Configuración de Tailwind CSS
+│   └── yarn.lock             # Bloqueo de dependencias para Yarn
+│
+├── nginx/                    # Configuración del proxy reverso
+│   ├── Dockerfile            # Imagen Docker para Nginx
+│   ├── default.conf          # Configuración de sitios (reverse proxy frontend/backend)
+│   └── nginx.conf            # Configuración general del servidor Nginx
+│
+├── redis/                    # Servicio de caché y cola de tareas
+│   └── Dockerfile            # Imagen Docker para Redis (personalizada o extendida)
+│
+├── secrets/                  # Archivos de credenciales sensibles
+│   ├── db_password.txt       # Contraseña de la base de datos
+│   └── redis_password.txt    # Contraseña del servicio Redis
+│
+├── worker/                   # Servicio para tareas en segundo plano
+│   ├── Dockerfile            # Imagen Docker para el worker
+│   └── requirements.txt      # Dependencias del worker (ej. Celery, Redis, etc.)
+│
+├── .dockerignore             # Archivos que Docker debe ignorar durante la construcción
+├── .env                      # Variables de entorno (puertos, contraseñas, etc.)
+├── docker-compose.yml        # Orquestación de servicios en entorno local
+├── stack-deploy.yml          # Archivo de despliegue para Docker Swarm (modo producción)
+└── README.md                 # Documentación del proyecto
+```
+### **Flujo General del Sistema**
+Frontend (React) → solicita datos (tareas, usuarios) al Backend (FastAPI).
+Backend (FastAPI) → consulta la Base de Datos (SQLite/PostgreSQL).
+Redis → almacena caché o envía tareas al Worker.
+Worker → ejecuta procesos pesados o asíncronos (en segundo plano).
+Nginx → sirve la aplicación React y redirige las solicitudes al backend.
+
+### **Archivos de Docker**
+Estos archivos permiten crear imágenes y ejecutar contenedores de cada componente del sistema.
+
+| Archivo                | Ubicación   | Descripción                          |
+|-------------------------|-------------|--------------------------------------|
+| `backend/Dockerfile`    | `backend/`  | Define la imagen del API FastAPI     |
+| `frontend/Dockerfile`   | `frontend/` | Define la imagen del frontend React  |
+| `nginx/Dockerfile`      | `nginx/`    | Crea el contenedor proxy inverso     |
+| `redis/Dockerfile`      | `redis/`    | Imagen personalizada de Redis        |
+| `worker/Dockerfile`     | `worker/`   | Define el servicio de tareas asíncronas |
+| `.dockerignore`         | `raíz`      | Archivos que no deben incluirse en las imágenes |
+
+### **Archivos de Docker Swarm**
+Docker Swarm es la capa de orquestación de contenedores en clúster,
+y sus archivos principales también están en la raíz del proyecto.
+
+| Ubicación | Archivo | Rol |
+|------------|----------|-----|
+| `stack-deploy.yml` | Swarm Stack | Archivo principal de despliegue en Swarm. Define todos los servicios, redes, volúmenes y políticas de réplica. |
+| `.env` | Variables globales | Provee configuraciones y contraseñas que Swarm inyecta a los servicios definidos en `stack-deploy.yml`. |
+| `secrets/db_password.txt`<br>`secrets/redis_password.txt` | Secretos de Swarm | Archivos utilizados como **Docker secrets** para proteger contraseñas en producción. |
+| `docker-compose.yml` | Base del Stack | Puede reutilizarse para Swarm con el comando:<br>`docker stack deploy -c docker-compose.yml <nombre>`. |
+
+### **Kubernetes (K8s)**
+Para despliegues en Kubernetes se recomienda crear los siguientes archivos (no incluidos en el repositorio por defecto):
+| Archivo sugerido | Descripción |
+|------------------|-------------|
+| `k8s/backend-deployment.yml` | Deployment y Service del backend |
+| `k8s/frontend-deployment.yml` | Deployment y Service del frontend |
+| `k8s/redis-deployment.yml` | Redis con PVC |
+| `k8s/worker-deployment.yml` | Worker con cola de tareas |
+| `k8s/nginx-ingress.yml` | Ingress Controller para el tráfico HTTP/HTTPS |
+
 ## 3. Instrucciones paso a paso
 
 ### **3.1 Despliegue local con Docker Compose**
